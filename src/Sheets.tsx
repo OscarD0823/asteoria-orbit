@@ -43,8 +43,7 @@ import {MacroStudio} from '@prisma/core/MacroStudio';
 import {applySheetMacro,sheetMacroSnapshot} from '@prisma/core/macro-adapters';
 import { InstallApp } from "@prisma/core/InstallApp";
 import { FontPicker } from "@prisma/core/FontPicker";
-import { fontFamilies } from "@prisma/core/fonts";
-import { officeFontCss, resolveOfficeFont } from "@prisma/core/office-fonts";
+import { officeFontCss, resolveOfficeFont, selectedOfficeFontName } from "@prisma/core/office-fonts";
 import { product } from "@prisma/core/product";
 import {usePrismaNavigation} from '@prisma/core/prisma-navigation';
 import { loadBook, saveBook } from "./sheets-storage";
@@ -892,7 +891,7 @@ export default function Sheets() {
                   <FontPicker label="Fuente de las celdas"
                     value={resolveOfficeFont(active?.font?.name)?.value ?? "Carlito"}
                     displayLabel={active?.font?.name ?? "Calibri"}
-                    onChange={value => format({ font: { name: fontFamilies.find(font => font.value === value)?.label ?? "Carlito" } })}
+                    onChange={value => format({ font: { name: selectedOfficeFontName(value) } })}
                     onError={error => setMessage(error instanceof Error ? error.message : "No se pudo seleccionar la fuente.")}
                   />
                   {resolveOfficeFont(active?.font?.name)?.label !== (active?.font?.name ?? "Calibri") && <small title="El nombre original se conserva al guardar el archivo XLSX">Vista previa: {resolveOfficeFont(active?.font?.name)?.label ?? "fuente del dispositivo o Carlito"}</small>}
