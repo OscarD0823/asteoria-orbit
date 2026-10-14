@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import {prismaPackageMetadata} from '@prisma/core/package-metadata';
 import {
   HyperFormula,
   DetailedCellError,
@@ -196,10 +197,10 @@ export class SheetsBook {
     const book = new SheetsBook(wb);
     book.namedExpressions=workbookNames(strFromU8(zip['xl/workbook.xml']));if(book.namedExpressions.length)book.rebuild();
     book.original = new Uint8Array(bytes);
-    if(zip["xl/vbaProject.bin"])book.warnings.push("Este XLSM contiene VBA inactivo. «Conservar formato original» guarda cambios de celdas y conserva las macros para Excel. Una copia XLSX elimina VBA.");
+    if(zip["xl/vbaProject.bin"])book.warnings.push("Este XLSM contiene VBA inactivo. «Conservar formato original» guarda cambios de celdas y conserva las macros en el archivo XLSX. Una copia XLSX elimina VBA.");
     const paths = Object.keys(zip);
     const unsupported: [RegExp, string][] = [
-      [/xl\/charts\//, "Gráficos nativos de Excel"],
+      [/xl\/charts\//, "Gráficos nativos del libro XLSX"],
       [/xl\/pivot/, "Tablas dinámicas"],
       [/xl\/externalLinks\//, "Vínculos con otros libros"],
       [/xl\/slicer/, "Segmentaciones"],
@@ -219,7 +220,7 @@ export class SheetsBook {
       .join("");
     if (/<(?:\w+:)?sheetProtection\b/.test(worksheetXml))
       throw new Error(
-        "El libro contiene hojas protegidas. Retira la protección en una copia desde Excel para editarla en Prisma.",
+        "El libro contiene hojas protegidas. Retira la protección en una copia desdel libro XLSX para editarla en Prisma.",
       );
     if (/<(?:\w+:)?f[^>]*(?:\bt="array"|\bref=)/.test(worksheetXml))
       book.warnings.push(
@@ -380,7 +381,7 @@ export class SheetsBook {
     this.workbook.model = copy;
     this.rebuild();
   }
-  async compatibleBytes(){if(!this.original)throw Error('Abre primero un archivo de Excel.');const {preserveSpreadsheetCells}=await import('./sheets-office');return preserveSpreadsheetCells(this.original,this.workbook,(name,row,col)=>this.value(name,row,col));}
+  async compatibleBytes(){if(!this.original)throw Error('Abre primero un archivo del libro XLSX.');const {preserveSpreadsheetCells}=await import('./sheets-office');return preserveSpreadsheetCells(this.original,this.workbook,(name,row,col)=>this.value(name,row,col));}
   async bytes() {
     for (const sheet of this.workbook.worksheets)
       sheet.eachRow((row, r) =>
@@ -400,7 +401,7 @@ export class SheetsBook {
     this.workbook.creator ||= "Prisma Sheets";
     this.workbook.modified = new Date();
     this.workbook.calcProperties.fullCalcOnLoad = true;
-    return new Uint8Array(await this.workbook.xlsx.writeBuffer());
+    return prismaPackageMetadata(new Uint8Array(await this.workbook.xlsx.writeBuffer()),'Prisma Sheets');
   }
   addSheet() {
     let i = 1;

@@ -421,7 +421,7 @@ export default function Sheets() {
     if (!book) return;
     try {
       if (edit !== null) commit();
-      if (kind === "compatible") {setBusy(true);const title=name.replace(/[<>:"/\\|?*\x00-\x1f]/g,"-")||"Mi libro";const format=(await import("@prisma/core/office-formats")).officePackageFormat(book.original!,"xlsx");await download(await book.compatibleBytes(),title+"."+format.extension,format.mime);await persist();setBusy(false);setExportMenu(false);setMessage("Celdas guardadas; macros y demás partes originales conservadas para Excel.");return;}
+      if (kind === "compatible") {setBusy(true);const title=name.replace(/[<>:"/\\|?*\x00-\x1f]/g,"-")||"Mi libro";const format=(await import("@prisma/core/office-formats")).officePackageFormat(book.original!,"xlsx");await download(await book.compatibleBytes(),title+"."+format.extension,format.mime);await persist();setBusy(false);setExportMenu(false);setMessage("Celdas guardadas; macros y demás partes originales conservadas en el archivo XLSX.");return;}
       if (kind === "xlsx" && book.warnings.length && !simplified) {
         setExportMenu(false);
         setReport(true);
@@ -469,7 +469,7 @@ export default function Sheets() {
             title + "-tabla.docx",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           );
-          setMessage("La tabla DOCX se puede editar en Prisma Writer y Word.");
+          setMessage("La tabla DOCX se puede editar en Prisma Writer.");
         } else {
           const { buildFlowDocument } = await import("@prisma/writer/flow");
           const rendered = await buildFlowDocument(flow);
@@ -667,7 +667,7 @@ export default function Sheets() {
                 <br />a una gran idea.
               </h1>
               <p>
-                Organiza, calcula y comparte tus hojas con quienes usan Excel.
+                Organiza, calcula y comparte tus hojas en formato XLSX.
                 Tus archivos se quedan en tu dispositivo.
               </p>
               <div className="sheets-hero-actions">
@@ -745,7 +745,7 @@ export default function Sheets() {
             >
               <FolderOpen />
               <b>
-                {recent ? "Continúa donde quedaste" : "Abre un libro de Excel"}
+                {recent ? "Continúa donde quedaste" : "Abre un libro XLSX"}
               </b>
               <span>
                 {recent
@@ -842,7 +842,7 @@ export default function Sheets() {
                   Imprimir
                 </button>
                 <button onClick={() => setReport(true)}>
-                  Compatibilidad con Excel
+                  Contenido conservado del libro
                 </button>
               </>
             ) : tab === "Inicio" ? (
@@ -1103,7 +1103,7 @@ export default function Sheets() {
                   Separar celdas
                 </button>
                 <button onClick={() => void exportFile("writer")}>
-                  Tabla para Writer o Word
+                  Tabla para Prisma Writer
                 </button>
                 <span className="sheet-ribbon-note">
                   Selecciona un rango para compartirlo como tabla editable.
@@ -1198,14 +1198,14 @@ export default function Sheets() {
                       : range;
                     changed();
                     setMessage(
-                      "Filtro guardado para Excel. La vista filtrada llegará en una actualización.",
+                      "Filtro guardado en el archivo XLSX. La vista filtrada llegará en una actualización.",
                     );
                   }}
                 >
-                  Filtro para Excel
+                  Filtro en el archivo XLSX
                 </button>
                 <button onClick={() => setReport(true)}>
-                  Compatibilidad con Excel
+                  Contenido conservado del libro
                 </button>
               </>
             ) : (
@@ -1229,12 +1229,12 @@ export default function Sheets() {
                       selected.views = [{ state: "frozen", ySplit: 1 }];
                       changed();
                       setMessage(
-                        "Primera fila congelada al abrir en Excel. Las letras y números permanecen visibles en Prisma.",
+                        "Primera fila congelada al reabrir el libro XLSX. Las letras y números permanecen visibles en Prisma.",
                       );
                     }
                   }}
                 >
-                  Congelar primera fila en Excel
+                  Congelar primera fila en XLSX
                 </button>
                 <button onClick={() => void exportFile("print")}>
                   <Printer />
@@ -1526,7 +1526,7 @@ export default function Sheets() {
                             title={
                               typeof cell.note === "string"
                                 ? cell.note
-                                : "Nota de Excel"
+                                : "Nota del libro XLSX"
                             }
                           />
                         )}
@@ -1579,14 +1579,14 @@ export default function Sheets() {
             >
               {book.original&&<button role="menuitem" onClick={()=>void exportFile("compatible")}>Conservar formato original (.xlsx / .xlsm)</button>}
               <button role="menuitem" onClick={() => void exportFile("xlsx")}>
-                Libro de Excel (.xlsx)
+                Libro del libro XLSX (.xlsx)
               </button>
               <button role="menuitem" onClick={() => void exportFile("csv")}>
                 Hoja actual (.csv)
               </button>
               {["tsv","json","ods"].map(kind=><button role="menuitem" key={kind} onClick={()=>void exportFile(kind)}>{kind.toUpperCase()}{kind==="ods"?" · valores de todas las hojas":""}</button>)}
               <button role="menuitem" onClick={() => void exportFile("writer")}>
-                Selección como tabla para Word (.docx)
+                Selección como tabla en DOCX (.docx)
               </button>
               <button role="menuitem" onClick={() => void exportFile("pdf")}>
                 Hoja o selección en PDF

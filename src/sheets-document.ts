@@ -22,11 +22,11 @@ export function sheetFlow(
     lastCol = Math.max(a.col, b.col);
   if (lastCol - firstCol >= 12)
     throw new Error(
-      "Selecciona hasta 12 columnas para obtener una tabla legible en Word o PDF.",
+      "Selecciona hasta 12 columnas para obtener una tabla legible en DOCX o PDF.",
     );
   if (lastRow - firstRow >= 2000)
     throw new Error(
-      "Selecciona hasta 2.000 filas para exportar a Word o PDF. XLSX conserva el libro completo.",
+      "Selecciona hasta 2.000 filas para exportar a DOCX o PDF. XLSX conserva el libro completo.",
     );
   const rows: RichNode[] = [],usedFonts=new Set<string>();
   const merges = sheet.model.merges.map((range) =>
