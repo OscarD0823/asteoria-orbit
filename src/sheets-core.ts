@@ -220,7 +220,7 @@ export class SheetsBook {
       .join("");
     if (/<(?:\w+:)?sheetProtection\b/.test(worksheetXml))
       throw new Error(
-        "El libro contiene hojas protegidas. Retira la protección en una copia desdel libro XLSX para editarla en Prisma.",
+        "El libro contiene hojas protegidas. Retira la protección en una copia desdel libro XLSX para editarla en ASTEORIA.",
       );
     if (/<(?:\w+:)?f[^>]*(?:\bt="array"|\bref=)/.test(worksheetXml))
       book.warnings.push(
@@ -398,10 +398,10 @@ export class SheetsBook {
           }
         }),
       );
-    this.workbook.creator ||= "Prisma Sheets";
+    this.workbook.creator ||= "Asteoria Orbit";
     this.workbook.modified = new Date();
     this.workbook.calcProperties.fullCalcOnLoad = true;
-    return prismaPackageMetadata(new Uint8Array(await this.workbook.xlsx.writeBuffer()),'Prisma Sheets');
+    return prismaPackageMetadata(new Uint8Array(await this.workbook.xlsx.writeBuffer()),"Asteoria Orbit");
   }
   addSheet() {
     let i = 1;

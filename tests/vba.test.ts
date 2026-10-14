@@ -12,9 +12,9 @@ test('VBA previews chained cell calculations without mutation and applies them i
  assert.throws(()=>applySheetMacro(book,plan.operations,plan.revision),/cambió/);book.destroy();
 });
 test('VBA reads formulas assigned earlier, handles range aggregates, conditions and bankers rounding',()=>{
- const book=new SheetsBook(),source=module('Dim i As Long\nFor i = 3 To 1 Step -1\nCells(i,1).Value = i\nNext i\nRange("B1").Formula = "=SUM(A1:A3)"\nIf Range("B1").Value = 6 Then\nRange("C1").Value = WorksheetFunction.Sum(Range("A1:A3"))\nElse\nRange("C1").Value = -1\nEnd If\nRange("D1").Value = Round(2.5)\nRange("E1").Value = Round(3.5)\nRange("F1").Value = -2^2\nRange("G1").Value = Trim("  Prisma  ") & " VBA"');
+ const book=new SheetsBook(),source=module("Dim i As Long\nFor i = 3 To 1 Step -1\nCells(i,1).Value = i\nNext i\nRange(\"B1\").Formula = \"=SUM(A1:A3)\"\nIf Range(\"B1\").Value = 6 Then\nRange(\"C1\").Value = WorksheetFunction.Sum(Range(\"A1:A3\"))\nElse\nRange(\"C1\").Value = -1\nEnd If\nRange(\"D1\").Value = Round(2.5)\nRange(\"E1\").Value = Round(3.5)\nRange(\"F1\").Value = -2^2\nRange(\"G1\").Value = Trim(\"  ASTEORIA  \") & \" VBA\"");
  const plan=planVbaMacro(source,sheetMacroSnapshot(book));applySheetMacro(book,plan.operations,plan.revision);
- assert.deepEqual([0,1,2,3,4,5,6].map(col=>book.value('Hoja1',0,col)),[1,6,6,2,4,-4,'Prisma VBA']);book.destroy();
+ assert.deepEqual([0,1,2,3,4,5,6].map(col=>book.value('Hoja1',0,col)),[1,6,6,2,4,-4,"ASTEORIA VBA"]);book.destroy();
 });
 test('VBA rejects unsupported host access, invalid procedures, ranges and unbounded loops before applying any changes',()=>{
  const book=new SheetsBook(),snapshot=sheetMacroSnapshot(book);

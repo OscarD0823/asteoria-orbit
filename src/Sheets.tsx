@@ -194,7 +194,7 @@ export default function Sheets() {
         s.name = "Presupuesto";
         const rows = [
           ["Presupuesto de ejemplo"],
-          ["Datos ficticios para explorar Prisma Sheets"],
+          ["Datos ficticios para explorar Asteoria Orbit"],
           [],
           ["Concepto", "Cantidad", "Valor unitario", "Total"],
           ["Cuadernos", 12, 8500, "=B5*C5"],
@@ -469,7 +469,7 @@ export default function Sheets() {
             title + "-tabla.docx",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           );
-          setMessage("La tabla DOCX se puede editar en Prisma Writer.");
+          setMessage("La tabla DOCX se puede editar en Asteoria Scribe.");
         } else {
           const { buildFlowDocument } = await import("@prisma/writer/flow");
           const rendered = await buildFlowDocument(flow);
@@ -609,7 +609,7 @@ export default function Sheets() {
             alt=""
           />
           <span>
-            Prisma <b>Sheets</b>
+            ASTEORIA <b>Sheets</b>
           </span>
         </a>
         {!book&&<span className="private-badge"><LockKeyhole size={13}/>100 % local</span>}
@@ -691,7 +691,7 @@ export default function Sheets() {
             <div className="sheets-preview" aria-hidden="true">
               <div className="sheet-mini-label">
                 <Sheet size={18} />
-                Prisma Sheets
+                Asteoria Orbit
               </div>
               <div className="sheet-mini-formula">
                 ƒx <span>=SUM(D5:D7)</span>
@@ -755,23 +755,23 @@ export default function Sheets() {
             </button>
           </div>
           <footer>
-            Prisma Sheets {product.version} · Primera versión{" "}
+            Asteoria Orbit {product.version} · Primera versión{" "}
             <nav>
               <a
-                href="https://oscard0823.github.io/prisma-writer/"
+                href="https://oscard0823.github.io/asteoria-scribe/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Prisma Writer
+                Asteoria Scribe
               </a>
               <a
-                href="https://oscard0823.github.io/prisma-pdf/"
+                href="https://oscard0823.github.io/asteoria-folio/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Prisma PDF
+                Asteoria Folio
               </a>
-              <a href="https://github.com/OscarD0823/prisma-pdf">
+              <a href="https://github.com/OscarD0823/asteoria-folio">
                 Código abierto
               </a>
             </nav>
@@ -1103,7 +1103,7 @@ export default function Sheets() {
                   Separar celdas
                 </button>
                 <button onClick={() => void exportFile("writer")}>
-                  Tabla para Prisma Writer
+                  Tabla para Asteoria Scribe
                 </button>
                 <span className="sheet-ribbon-note">
                   Selecciona un rango para compartirlo como tabla editable.
@@ -1229,7 +1229,7 @@ export default function Sheets() {
                       selected.views = [{ state: "frozen", ySplit: 1 }];
                       changed();
                       setMessage(
-                        "Primera fila congelada al reabrir el libro XLSX. Las letras y números permanecen visibles en Prisma.",
+                        "Primera fila congelada al reabrir el libro XLSX. Las letras y números permanecen visibles en ASTEORIA.",
                       );
                     }
                   }}

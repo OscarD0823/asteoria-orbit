@@ -1,7 +1,9 @@
 {
   "product": "sheets",
-  "name": "Prisma Sheets",
-  "website": "https://oscard0823.github.io/prisma-sheets/",
-  "sourceRepository": "OscarD0823/prisma-pdf",
+  "name": "Asteoria Orbit",
+  "channel": "beta",
+  "website": "https://oscard0823.github.io/asteoria-orbit/",
+  "sourceRepository": "OscarD0823/asteoria-orbit",
+  "sharedRepository": "OscarD0823/asteoria",
   "sourceRef": "main"
 }
