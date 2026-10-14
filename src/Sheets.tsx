@@ -609,7 +609,7 @@ export default function Sheets() {
             alt=""
           />
           <span>
-            ASTEORIA <b>Sheets</b>
+            ASTEORIA <b>Orbit</b>
           </span>
         </a>
         {!book&&<span className="private-badge"><LockKeyhole size={13}/>100 % local</span>}
