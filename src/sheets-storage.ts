@@ -1,9 +1,12 @@
+import {durableTransaction} from '@prisma/core/idb-durability';
+import type {CellDraft} from './sheet-draft';
 export type StoredBook = {
   bytes: Uint8Array;
   name: string;
   warnings: string[];
   original: Uint8Array | null;
   updated?: number;
+  draft?: CellDraft;
 };
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -24,7 +27,7 @@ export async function saveBook(book: StoredBook) {
   const db = await openDatabase();
   try {
     await new Promise<void>((resolve, reject) => {
-      const t = db.transaction(['books','cards'], "readwrite"), updated = Date.now();
+      const t = durableTransaction(db,['books','cards']), updated = Date.now();
       t.objectStore("books").put({...book, updated}, "current");
       t.objectStore('cards').put({id:'current',name:book.name,updated},'current');
       t.oncomplete = () => resolve();

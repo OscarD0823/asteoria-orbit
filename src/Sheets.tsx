@@ -1,7 +1,8 @@
+import {useLocalAutosave} from '@prisma/core/useLocalAutosave';
 import {TemplateGallery} from '@prisma/core/TemplateGallery';
 import {createSheetTemplate} from './sheet-templates';
 import {creationTemplate} from '@prisma/core/template-catalog';
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { WorkbookModel, Cell } from "exceljs";
 import {
   ArrowLeft,
@@ -47,6 +48,7 @@ import { officeFontCss, resolveOfficeFont, selectedOfficeFontName } from "@prism
 import { product } from "@prisma/core/product";
 import {usePrismaNavigation} from '@prisma/core/prisma-navigation';
 import { loadBook, saveBook } from "./sheets-storage";
+import { recoverCellDraft, type CellDraft } from './sheet-draft';
 import "./sheets.css";
 type Pos = { row: number; col: number };
 const equal = (a: Pos, b: Pos) => a.row === b.row && a.col === b.col;
@@ -90,9 +92,14 @@ export default function Sheets() {
     nameRef = useRef(name),
     saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
     generation = useRef(0);
+  const draftRef=useRef<CellDraft|undefined>(undefined);
+  const bookRevision=useRef(0);
+  const serialized=useRef<{book:SheetsBook;revision:number;bytes:Uint8Array}|null>(null);
   bookRef.current = book;
   editRef.current = edit;
   nameRef.current = name;
+  draftRef.current=book&&(edit!==null||formula!==book.input(sheet,anchor.row,anchor.col))
+    ?{sheet,row:anchor.row,col:anchor.col,text:edit??formula}:undefined;
   const fail = (e: unknown) => {
     setMessage(e instanceof Error ? e.message : String(e));
     setBusy(false);
@@ -115,17 +122,20 @@ export default function Sheets() {
       .then(async () => {
         const current = bookRef.current;
         if (!current || generation.current !== expected) return;
-        const bytes = await current.bytes();
+        const revision=bookRevision.current;
+        const cached=serialized.current;
+        const bytes = cached?.book===current&&cached.revision===revision?cached.bytes:await current.bytes();
         if (generation.current !== expected || current !== bookRef.current)
           return;
+        if(bookRevision.current===revision)serialized.current={book:current,revision,bytes};
         await saveBook({
           bytes,
           name: nameRef.current,
           warnings: current.warnings,
           original: current.original,
+          draft: draftRef.current,
         });
         checkpoint.current = bytes;
-        setSaved(true);
       })
       .catch((error) => {
         fail(error);
@@ -133,12 +143,10 @@ export default function Sheets() {
       });
     return queue.current;
   };
-  const changed = () => {
-    setTick((t) => t + 1);
-    setSaved(false);
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void persist().catch(fail), 500);
-  };
+  const saveRevision=useMemo(()=>({book,tick,name,sheet,anchor,edit,formula}),[book,tick,name,sheet,anchor,edit,formula]);
+  const autosave=useLocalAutosave({enabled:!!book,revision:saveRevision,save:persist,onError:fail});
+  useEffect(()=>setSaved(autosave.status==='saved'),[autosave.status]);
+  const changed = () => {bookRevision.current++;setTick(t=>t+1);setSaved(false);};
   const remember = () => {
     if (book) {
       history.current.push(structuredClone(book.workbook.model));
@@ -165,23 +173,29 @@ export default function Sheets() {
       }
     return positions;
   };
-  const enterBook = async (next: SheetsBook, title: string) => {
+  const enterBook = async (next: SheetsBook, title: string, pending?:CellDraft) => {
+    if(bookRef.current)await autosave.flush();
     generation.current++;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setBook(next);
     bookRef.current = next;
     nameRef.current = title;
     setName(title);
-    setSheet(next.workbook.worksheets[0].name);
-    setAnchor({ row: 0, col: 0 });
-    setEnd({ row: 0, col: 0 });
-    setEdit(null);
+    const draft=recoverCellDraft(pending,next.workbook.worksheets.map(s=>s.name));
+    const pos=draft?{row:draft.row,col:draft.col}:{row:0,col:0};
+    setSheet(draft?.sheet??next.workbook.worksheets[0].name);
+    setAnchor(pos);
+    setEnd(pos);
+    setEdit(draft?.text??null);
+    draftRef.current=draft;
     setScroll({ top: 0, left: 0 });
     history.current = [];
     future.current = [];
     checkpoint.current = await next.bytes();
+    bookRevision.current=0;
+    serialized.current={book:next,revision:0,bytes:checkpoint.current};
     setSaved(false);
-    setMessage("");
+    setMessage(draft?'Se recuperó una celda en edición. Pulsa Intro para aplicarla o Esc para descartarla.':"");
     setRecent(true);
     void persist().catch(fail);
   };
@@ -194,7 +208,7 @@ export default function Sheets() {
         s.name = "Presupuesto";
         const rows = [
           ["Presupuesto de ejemplo"],
-          ["Datos ficticios para explorar Asteoria Orbit"],
+          ["Datos ficticios para explorar Auralis Orbit"],
           [],
           ["Concepto", "Cantidad", "Valor unitario", "Total"],
           ["Cuadernos", 12, 8500, "=B5*C5"],
@@ -278,7 +292,7 @@ export default function Sheets() {
       const next = await SheetsBook.open(v.bytes);
       next.warnings = v.warnings ?? [];
       next.original = v.original ?? null;
-      await enterBook(next, v.name);
+      await enterBook(next, v.name, recoverCellDraft(v.draft,next.workbook.worksheets.map(s=>s.name)));
       setBusy(false);
     } catch (e) {
       fail(e);
@@ -309,7 +323,7 @@ export default function Sheets() {
       fail(e);
     }
   };
-  usePrismaNavigation({save:async()=>{if(busy)throw Error('Espera a que termine la operación.');if(editRef.current!==null)commit();await persist();},template:newFromTemplate,file:open,recent:async()=>{await resume();},error:fail});
+  usePrismaNavigation({save:async()=>{if(busy)throw Error('Espera a que termine la operación.');await persist();await autosave.flush();},template:newFromTemplate,file:open,recent:async()=>{await resume();},error:fail});
   const select = (pos: Pos, extend = false) => {
     if (edit !== null) commit();
     if (!extend) setAnchor(pos);
@@ -469,7 +483,7 @@ export default function Sheets() {
             title + "-tabla.docx",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           );
-          setMessage("La tabla DOCX se puede editar en Asteoria Scribe.");
+          setMessage("La tabla DOCX se puede editar en Auralis Scribe.");
         } else {
           const { buildFlowDocument } = await import("@prisma/writer/flow");
           const rendered = await buildFlowDocument(flow);
@@ -609,7 +623,7 @@ export default function Sheets() {
             alt=""
           />
           <span>
-            ASTEORIA <b>Orbit</b>
+            Auralis <b>Orbit</b>
           </span>
         </a>
         {!book&&<span className="private-badge"><LockKeyhole size={13}/>100 % local</span>}
@@ -691,7 +705,7 @@ export default function Sheets() {
             <div className="sheets-preview" aria-hidden="true">
               <div className="sheet-mini-label">
                 <Sheet size={18} />
-                Asteoria Orbit
+                Auralis Orbit
               </div>
               <div className="sheet-mini-formula">
                 ƒx <span>=SUM(D5:D7)</span>
@@ -755,23 +769,23 @@ export default function Sheets() {
             </button>
           </div>
           <footer>
-            Asteoria Orbit {product.version} · Primera versión{" "}
+            Auralis Orbit {product.version} · Primera versión{" "}
             <nav>
               <a
-                href="https://oscard0823.github.io/asteoria-scribe/"
+                href="https://oscard0823.github.io/auralis-scribe/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Asteoria Scribe
+                Auralis Scribe
               </a>
               <a
-                href="https://oscard0823.github.io/asteoria-folio/"
+                href="https://oscard0823.github.io/auralis-folio/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Asteoria Folio
+                Auralis Folio
               </a>
-              <a href="https://github.com/OscarD0823/asteoria-folio">
+              <a href="https://github.com/OscarD0823/auralis-orbit">
                 Código abierto
               </a>
             </nav>
@@ -1103,7 +1117,7 @@ export default function Sheets() {
                   Separar celdas
                 </button>
                 <button onClick={() => void exportFile("writer")}>
-                  Tabla para Asteoria Scribe
+                  Tabla para Auralis Scribe
                 </button>
                 <span className="sheet-ribbon-note">
                   Selecciona un rango para compartirlo como tabla editable.
@@ -1229,7 +1243,7 @@ export default function Sheets() {
                       selected.views = [{ state: "frozen", ySplit: 1 }];
                       changed();
                       setMessage(
-                        "Primera fila congelada al reabrir el libro XLSX. Las letras y números permanecen visibles en ASTEORIA.",
+                        "Primera fila congelada al reabrir el libro XLSX. Las letras y números permanecen visibles en Auralis.",
                       );
                     }
                   }}

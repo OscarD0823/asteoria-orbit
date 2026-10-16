@@ -1,9 +1,9 @@
 {
   "product": "sheets",
-  "name": "Asteoria Orbit",
+  "name": "Auralis Orbit",
   "channel": "beta",
-  "website": "https://oscard0823.github.io/asteoria-orbit/",
-  "sourceRepository": "OscarD0823/asteoria-orbit",
+  "website": "https://oscard0823.github.io/auralis-orbit/",
+  "sourceRepository": "OscarD0823/auralis-orbit",
   "sharedRepository": "OscarD0823/asteoria",
   "sourceRef": "main"
 }
